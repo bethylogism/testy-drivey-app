@@ -35,9 +35,9 @@ export const Carousel: FC<ImageCarouselProps> = ({ data }) => {
 
   useEffect(() => {
     setDataWithPlaceholders([
-      { id: -1, uri: "", title: "" },
+      { id: -1, uri: "", title: "", isVisible: false },
       ...data,
-      { id: data.length + 1, uri: "", title: "" },
+      { id: data.length + 1, uri: "", title: "", isVisible: false },
     ]);
     currentIndex.current = 1;
     setIsPrevDisabled(true);
@@ -51,7 +51,7 @@ export const Carousel: FC<ImageCarouselProps> = ({ data }) => {
       changed: ViewToken[];
     }) => {
       const itemsInView = viewableItems.filter(
-        ({ item }: { item: ImageCarouselItem }) => item.uri && item.title
+        ({ item }: { item: ImageCarouselItem }) => item.isVisible
       );
 
       if (itemsInView.length === 0) {
@@ -105,6 +105,10 @@ export const Carousel: FC<ImageCarouselProps> = ({ data }) => {
       <FlatList
         ref={flatListRef}
         data={dataWithPlaceholders}
+        initialNumToRender={3}
+        accessible={true}
+        accessibilityLabel="Scroll horizontally"
+        accessibilityHint="View more slides"
         renderItem={({ item, index }) => {
           if (!item.uri || !item.title) {
             return <View style={{ width: EMPTY_ITEM_LENGTH }} />;
@@ -129,6 +133,9 @@ export const Carousel: FC<ImageCarouselProps> = ({ data }) => {
           return (
             <View style={{ width: ITEM_LENGTH }}>
               <Animated.View
+                // aria-current={currentIndex.current === item.id}
+                aria-accessibilityRole="image"
+                accessibilityRole="image"
                 style={[
                   {
                     transform: [{ translateY }],
@@ -174,13 +181,10 @@ export const Carousel: FC<ImageCarouselProps> = ({ data }) => {
             },
             styles.arrowBtn,
           ]}
+          accessibilityLabel="Go To Previous Item"
+          accessibilityRole="button"
         >
-          <Text
-            style={styles.arrowBtnText}
-            accessibilityLabel="Go To Previous Item"
-          >
-            ◂
-          </Text>
+          <Text style={styles.arrowBtnText}>◂</Text>
         </Pressable>
         <View style={styles.spacer} />
         <Pressable
