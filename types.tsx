@@ -18,6 +18,7 @@ declare global {
     id: number;
     uri: string;
     title: string;
+    isVisible: boolean;
   }
 }
 

@@ -4,39 +4,43 @@ import {
   render,
   screen,
   fireEvent,
-  cleanup,
+  within,
+  waitFor,
 } from "@testing-library/react-native";
 import React from "react";
+import { Dimensions, Slider } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Carousel } from "./Carousel";
 
-afterAll(cleanup);
-
 describe("carousel", () => {
-  it("Should render slides with titles", () => {
+  it("Should render slides with titles", async () => {
     render(
       <SafeAreaView>
         <Carousel
           data={[
             {
               id: 1,
-              uri: "https://images.unsplash.com/photo-1607326957431-29d25d2b386f",
+              uri: "mock_uri_1",
               title: "Dahlia",
+              isVisible: true,
             },
             {
               id: 2,
-              uri: "https://images.unsplash.com/photo-1627522460108-215683bdc9f6",
+              uri: "mock_uri_2",
               title: "Zinnia",
+              isVisible: true,
             },
             {
               id: 3,
-              uri: "https://images.unsplash.com/photo-1587814213271-7a6625b76c33",
+              uri: "mock_uri_3",
               title: "Tulip",
+              isVisible: true,
             },
             {
               id: 4,
               uri: "mock_uri",
               title: "Another flower",
+              isVisible: true,
             },
           ]}
         />
@@ -44,10 +48,83 @@ describe("carousel", () => {
     );
     expect(screen.queryByText("Dahlia")).toBeTruthy();
     expect(screen.queryByText("Zinnia")).toBeTruthy();
-    expect(screen.getByText("Tulip")).toBeTruthy();
-    expect(screen.getByText("Tulip")).toBeDefined();
-    expect(screen.getByText("Another flower")).toBeDefined();
+    expect(screen.queryByText("Tulip")).not.toBeTruthy();
+    // Initial render limited to 3:
+    expect(screen.queryByText("Another flower")).toBeNull();
 
-    // screen.debug();
+    // Test: only2 are visible at any point
+    expect(screen.getAllByRole("image")).toHaveLength(2);
+
+    const carousel = screen.getByAccessibilityHint("View more slides");
+    const { width } = Dimensions.get("window");
+    const horizontalScroll = {
+      nativeEvent: {
+        contentOffset: {
+          x: width,
+        },
+        contentSize: {
+          // Dimensions of the scrollable content
+          width: width,
+        },
+        layoutMeasurement: {
+          // Dimensions of the device
+          width: width,
+        },
+      },
+    };
+    fireEvent.scroll(carousel, horizontalScroll);
+
+    const slider = within(carousel);
+    await waitFor(() => slider.getByText("Another flower"));
+
+    expect(screen.queryByText("Another flower")).toBeTruthy();
+
+    expect(screen.getByRole("image", { name: "Another flower" })).toBeTruthy();
+  });
+  it("Should disable the left button", async () => {
+    render(
+      <SafeAreaView>
+        <Carousel
+          data={[
+            {
+              id: 1,
+              uri: "mock_uri_1",
+              title: "Dahlia",
+              isVisible: true,
+            },
+            {
+              id: 2,
+              uri: "mock_uri_2",
+              title: "Zinnia",
+              isVisible: true,
+            },
+            {
+              id: 3,
+              uri: "mock_uri_3",
+              title: "Tulip",
+              isVisible: true,
+            },
+            {
+              id: 4,
+              uri: "mock_uri",
+              title: "Another flower",
+              isVisible: true,
+            },
+          ]}
+        />
+      </SafeAreaView>
+    );
+
+    const leftbtnDisabled = screen.getByRole("button", {
+      name: "Go To Previous Item",
+      disabled: true,
+    });
+
+    expect(leftbtnDisabled).toBeTruthy();
+    const leftbtnNotDisabled = screen.queryByRole("button", {
+      name: "Go To Previous Item",
+      disabled: false,
+    });
+    expect(leftbtnNotDisabled).toBeNull();
   });
 });
